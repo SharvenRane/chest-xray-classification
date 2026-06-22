@@ -1,21 +1,11 @@
-# Default configuration for chest-xray-classification
-backbone: efficientnet_b4
+# Chest X-ray multi-label classification config
+model: densenet121        # timm backbone (CheXNet baseline)
 pretrained: true
-num_classes: 2
-img_size: 224
-batch_size: 32
-num_workers: 4
-lr: 1.0e-4
-weight_decay: 1.0e-2
-epochs: 50
-experiment_name: chest-xray-classification
-
-# update 2
-
-# update 3
-
-# update 6
-
-# update 7
-
-# update 10
+image_size: 224           # ChestMNIST supports 28 / 64 / 128 / 224
+batch_size: 64
+epochs: 15
+lr: 0.0003
+weight_decay: 0.0001
+num_workers: 0           # 0 on Windows: ChestMNIST is in-memory, no IO bottleneck
+data_dir: null            # null -> default MedMNIST cache (~/.medmnist)
+output_dir: outputs

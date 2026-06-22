@@ -1,87 +1,46 @@
-# Chest Xray Classification
+# Chest X-ray Multi Label Classification
 
-Multi-label chest X-ray classification with class imbalance handling and explainability
+A classifier for 14 thoracic findings on chest radiographs. It deals with the
+heavy class imbalance you always run into on this dataset, reports AUC,
+sensitivity and specificity for every finding instead of a single accuracy
+number, draws Grad-CAM overlays so you can see what the model is looking at, and
+ships with a change control plan written the way an FDA submission expects one.
 
-`chest-xray` `classification` `medical-ai` `explainability` `pytorch`
+Everything runs on NIH ChestX-ray14 through MedMNIST's ChestMNIST, which
+downloads on its own with no access request, so the whole pipeline reproduces on
+a single GPU.
 
-## Overview
+## Running it
 
-This repository implements a complete pipeline for **chest xray classification**, covering
-data preprocessing, model training, evaluation, and deployment.
-
-## Features
-
-- Clean, modular PyTorch implementation
-- Reproducible experiments with MLflow tracking
-- Comprehensive evaluation with standard benchmarks
-- ONNX export for production deployment
-- Detailed documentation and usage examples
-
-## Installation
-
-```bash
-git clone https://github.com/YOUR_USERNAME/chest-xray-classification.git
-cd chest-xray-classification
+```
 pip install -r requirements.txt
+python src/train.py --config configs/default.yaml
+python src/evaluate.py --checkpoint outputs/best.pt
+python src/gradcam.py --checkpoint outputs/best.pt --index 0 --label Cardiomegaly
 ```
 
-## Quick Start
+If you are on an NVIDIA card, install the CUDA build of PyTorch that matches it
+(cu128 for the 50 series) from pytorch.org first.
 
-```python
-from src.model import Model
-from src.trainer import Trainer
-from src.config import Config
+## Where the numbers come from
 
-config = Config.from_yaml("configs/default.yaml")
-model = Model(config)
-trainer = Trainer(model, config)
-trainer.train()
-```
+Training writes real metrics to `outputs/metrics.json` and fills in
+`docs/VALIDATION_REPORT.md` from the held out test split. I kept numbers out of
+this README on purpose, so nothing here is stale or invented. Run it and the
+report writes itself.
 
-## Project Structure
+## What is in here
 
-```
-chest-xray-classification/
-├── src/
-│   ├── model.py        # Model architecture
-│   ├── dataset.py      # Data loading and preprocessing
-│   ├── trainer.py      # Training loop
-│   ├── evaluate.py     # Evaluation metrics
-│   └── utils.py        # Helper utilities
-├── configs/
-│   └── default.yaml    # Default configuration
-├── notebooks/
-│   └── exploration.ipynb
-├── tests/
-│   └── test_model.py
-├── requirements.txt
-└── README.md
-```
+`dataset.py` loads ChestMNIST and computes the positive weight per class for the
+imbalance. `model.py` is the DenseNet121 backbone (the CheXNet baseline) with a
+multi label head. `train.py` is the training loop with mixed precision, weighted
+BCE, a cosine schedule and MLflow logging. `evaluate.py` produces the per class
+metrics and the report. `gradcam.py` saves the attention overlays.
+`docs/PCCP.md` is an example change control plan.
 
-## Results
+## A few honest caveats
 
-| Model | Dataset | Metric | Score |
-|-------|---------|--------|-------|
-| Baseline | Standard | Primary | - |
-| Ours | Standard | Primary | - |
-
-## Usage
-
-```bash
-# Train
-python train.py --config configs/default.yaml
-
-# Evaluate
-python evaluate.py --checkpoint checkpoints/best.pth
-
-# Export to ONNX
-python export.py --checkpoint checkpoints/best.pth
-```
-
-## References
-
-- Relevant papers and resources for chest xray classification
-
-## License
-
-MIT
+ChestMNIST is a standardized, reduced resolution version of ChestX-ray14, so the
+AUCs sit a little below what full resolution training gives you. The labels were
+mined from radiology reports with NLP and carry that noise. This is a research
+and learning project, not a medical device.
